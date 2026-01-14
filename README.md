@@ -42,11 +42,16 @@ Edita el archivo `.env` y configura:
 - `DATABASE_URL`: URL de conexión a PostgreSQL
   - Para local (Docker): `postgresql://postgres:postgres@localhost:5432/kime_db?schema=public`
   - Para Supabase: Tu connection string de Supabase
+- `REDIS_HOST`: Host de Redis (default: `localhost`)
+- `REDIS_PORT`: Puerto de Redis (default: `6379`)
+- `REDIS_PASSWORD`: Contraseña de Redis (opcional, requerida si Redis tiene autenticación)
 
-4. Inicia PostgreSQL local (opcional, si usas Docker):
+4. Inicia los servicios con Docker Compose:
 ```bash
 docker-compose up -d
 ```
+
+Esto iniciará PostgreSQL y Redis con persistencia de datos configurada.
 
 5. Genera el cliente de Prisma:
 ```bash
@@ -148,19 +153,74 @@ pnpm run prisma:seed
 
 ### Docker Compose
 
+El proyecto incluye configuración de Docker Compose para PostgreSQL y Redis con persistencia de datos mediante volúmenes.
+
+#### Servicios disponibles
+
+- **PostgreSQL**: Base de datos principal en el puerto `5432`
+- **Redis**: Cache y almacenamiento en memoria en el puerto `6379`
+
+#### Comandos
+
 ```bash
-# Iniciar PostgreSQL
+# Iniciar todos los servicios (PostgreSQL y Redis)
 docker-compose up -d
 
-# Detener PostgreSQL
+# Iniciar un servicio específico
+docker-compose up -d postgres
+docker-compose up -d redis
+
+# Detener todos los servicios
 docker-compose down
 
-# Ver logs de PostgreSQL
-docker-compose logs -f postgres
-
-# Eliminar volúmenes (⚠️ elimina todos los datos)
+# Detener y eliminar volúmenes (⚠️ elimina todos los datos)
 docker-compose down -v
+
+# Ver logs de todos los servicios
+docker-compose logs -f
+
+# Ver logs de un servicio específico
+docker-compose logs -f postgres
+docker-compose logs -f redis
+
+# Ver el estado de los servicios
+docker-compose ps
+
+# Reiniciar un servicio
+docker-compose restart postgres
+docker-compose restart redis
 ```
+
+#### Persistencia de datos
+
+Los datos se persisten automáticamente mediante volúmenes de Docker:
+
+- **PostgreSQL**: Los datos se guardan en el volumen `postgres_data`
+- **Redis**: Los datos se guardan en el volumen `redis_data` (con AOF habilitado)
+
+Los volúmenes persisten incluso si detienes los contenedores. Para eliminar los datos, usa `docker-compose down -v`.
+
+#### Variables de entorno para Docker
+
+Puedes configurar los servicios mediante variables de entorno en tu archivo `.env`:
+
+```env
+# PostgreSQL
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=kime_db
+POSTGRES_PORT=5432
+
+# Redis
+REDIS_PORT=6379
+REDIS_PASSWORD=redis
+```
+
+#### Health checks
+
+Ambos servicios incluyen health checks configurados:
+- PostgreSQL: Verifica que el servicio esté listo para aceptar conexiones
+- Redis: Verifica la conectividad mediante un comando ping
 
 ## 🔒 Git Hooks (Lefthook)
 
@@ -235,6 +295,9 @@ kime-api/
 ├── prisma/
 │   └── schema.prisma          # Schema de Prisma
 ├── src/
+│   ├── cache/                 # Módulo de Redis/Cache
+│   │   ├── redis.module.ts
+│   │   └── redis.service.ts
 │   ├── config/                 # Configuración de la aplicación
 │   │   ├── config.module.ts
 │   │   └── config.validation.ts
@@ -244,16 +307,75 @@ kime-api/
 │   ├── modules/               # Módulos de la aplicación (crear según necesidad)
 │   ├── common/                # Utilidades compartidas
 │   ├── app.module.ts
-│   ├── app.controller.ts
 │   ├── app.service.ts
 │   └── main.ts
+├── scripts/                   # Scripts de utilidad
+│   └── validate-commit-msg.sh  # Validación de commits
 ├── test/                      # Tests e2e
 ├── .env.example               # Template de variables de entorno
 ├── .lefthook.yml              # Configuración de Git hooks
 ├── biome.json                 # Configuración de Biome
-├── docker-compose.yml         # Configuración de Docker para PostgreSQL
+├── docker-compose.yml         # Configuración de Docker (PostgreSQL + Redis)
 └── package.json
 ```
+
+## 🔴 Redis / Cache
+
+El proyecto incluye integración con Redis para caching y almacenamiento en memoria.
+
+### Uso del RedisService
+
+El `RedisService` está disponible globalmente y puede ser inyectado en cualquier servicio:
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { RedisService } from '@/cache/redis.service';
+
+@Injectable()
+export class UserService {
+  constructor(private readonly redis: RedisService) {}
+
+  async getUserFromCache(userId: string) {
+    const cached = await this.redis.get(`user:${userId}`);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+    return null;
+  }
+
+  async setUserInCache(userId: string, userData: unknown, ttl = 3600) {
+    await this.redis.set(
+      `user:${userId}`,
+      JSON.stringify(userData),
+      ttl
+    );
+  }
+}
+```
+
+### Métodos disponibles
+
+El `RedisService` proporciona los siguientes métodos:
+
+- `get(key: string)`: Obtener un valor
+- `set(key: string, value: string, ttlSeconds?: number)`: Establecer un valor
+- `del(key: string)`: Eliminar una clave
+- `exists(key: string)`: Verificar si una clave existe
+- `expire(key: string, seconds: number)`: Establecer tiempo de expiración
+- `ttl(key: string)`: Obtener tiempo restante de vida
+- `incr(key: string)`: Incrementar un valor
+- `decr(key: string)`: Decrementar un valor
+- `mget(...keys: string[])`: Obtener múltiples valores
+- `mset(...keyValues: string[])`: Establecer múltiples valores
+- `keys(pattern: string)`: Buscar claves por patrón
+- `getClient()`: Obtener el cliente Redis para operaciones avanzadas
+
+### Configuración
+
+Redis se configura automáticamente usando las variables de entorno:
+- `REDIS_HOST`: Host de Redis (default: `localhost`)
+- `REDIS_PORT`: Puerto de Redis (default: `6379`)
+- `REDIS_PASSWORD`: Contraseña de Redis (opcional)
 
 ## 🔧 Configuración
 
