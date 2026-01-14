@@ -1,9 +1,12 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
-import { PrismaClient } from '@prisma/client';
+import { type Prisma, PrismaClient } from '@prisma/client';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService
+  extends PrismaClient<Prisma.PrismaClientOptions, 'query' | 'info' | 'warn' | 'error'>
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(PrismaService.name);
 
   constructor(private readonly configService: ConfigService) {
@@ -35,7 +38,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   }
 
   private setupLogging() {
-    this.$on('query' as never, (e: { query: string; params: string; duration: number }) => {
+    this.$on('query', (e: { query: string; params: string; duration: number }) => {
       const nodeEnv = this.configService.get<string>('NODE_ENV', 'development');
       if (nodeEnv === 'development') {
         this.logger.debug(`Query: ${e.query}`);
@@ -44,15 +47,15 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       }
     });
 
-    this.$on('error' as never, (e: { message: string; target: string }) => {
+    this.$on('error', (e: { message: string; target: string }) => {
       this.logger.error(`Database error: ${e.message}`, e.target);
     });
 
-    this.$on('info' as never, (e: { message: string; target: string }) => {
+    this.$on('info', (e: { message: string; target: string }) => {
       this.logger.log(`Database info: ${e.message}`);
     });
 
-    this.$on('warn' as never, (e: { message: string; target: string }) => {
+    this.$on('warn', (e: { message: string; target: string }) => {
       this.logger.warn(`Database warning: ${e.message}`);
     });
   }
