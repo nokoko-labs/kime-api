@@ -11,6 +11,11 @@ pre-commit:
       run: pnpm run check:fix
       stage_fixed: true
 
+commit-msg:
+  commands:
+    validate-commit:
+      run: bash scripts/validate-commit-msg.sh {1}
+
 pre-push:
   parallel: true
   commands:

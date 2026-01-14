@@ -166,6 +166,30 @@ docker-compose down -v
 
 Este proyecto utiliza [Lefthook](https://github.com/evilmartians/lefthook) para ejecutar validaciones automáticas antes de commits y pushes.
 
+### Commit-msg
+
+Antes de aceptar el commit, se valida que el mensaje siga el formato de [Conventional Commits](https://www.conventionalcommits.org/):
+
+**Formato requerido:** `type(scope): description`
+
+**Reglas:**
+- El header debe tener menos de 80 caracteres
+- Type y scope deben estar en minúsculas
+- Tipos válidos: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `ci`
+- Scope es opcional pero recomendado
+- Descripción debe estar en modo imperativo
+
+**Ejemplos válidos:**
+- ✅ `feat(auth): implement login with google`
+- ✅ `fix(user): resolve crash on invalid email`
+- ✅ `chore(deps): upgrade nestjs packages`
+- ✅ `docs(readme): update installation steps`
+
+**Ejemplos inválidos:**
+- ❌ `feat: Added new feature` (sin scope, no imperativo)
+- ❌ `FEAT(auth): implement login` (type en mayúsculas)
+- ❌ `feat(auth): implemented login` (no imperativo)
+
 ### Pre-commit
 
 Antes de cada commit, se ejecuta automáticamente:
