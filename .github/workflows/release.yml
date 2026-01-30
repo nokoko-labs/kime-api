@@ -30,17 +30,11 @@ jobs:
         with:
           node-version: 20
 
-      # Ruta hardcodeada para evitar el error de "path required"
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: /home/runner/.local/share/pnpm/store/v3
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
+      # Forzamos la instalación ignorando configuraciones de workspace externas
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-workspace
+        env:
+          COREPACK_ENABLE_STRICT: 0
 
       - name: Release
         env:
