@@ -2,13 +2,14 @@ name: Release
 on:
   push:
     branches:
-      - main
+      - master
       - develop
 
 jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    # ESTO ES LO QUE FALTA: Permisos para que el bot pueda escribir en el repo
     permissions:
       contents: write
       issues: write
@@ -19,6 +20,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Persist credentials es true por defecto, pero si usas un 
+          # Personal Access Token (PAT) en el futuro, se configura aquí.
 
       - name: Install pnpm
         uses: pnpm/action-setup@v3
@@ -29,19 +32,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'pnpm'
 
-      # Forzamos la instalación ignorando configuraciones de workspace externas
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --ignore-workspace
-        env:
-          COREPACK_ENABLE_STRICT: 0
-
-      - name: Install Semantic Release globally
-        # Instalamos fuera del contexto de tu proyecto para evitar el error de "packages"
-        run: npm install -g semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/exec @semantic-release/github @semantic-release/npm
+        run: pnpm install --frozen-lockfile
 
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # Ejecutamos el binario global
-        run: semantic-release
+        run: npx semantic-release
