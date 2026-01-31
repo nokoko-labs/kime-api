@@ -10,8 +10,16 @@ ALTER TABLE "users" ADD COLUMN "role" "Role" NOT NULL DEFAULT 'USER';
 -- AlterTable: drop name
 ALTER TABLE "users" DROP COLUMN "name";
 
--- Backfill tenantId for any existing users with null tenantId (use first tenant if exists)
-UPDATE "users" SET "tenantId" = (SELECT "id" FROM "tenants" LIMIT 1) WHERE "tenantId" IS NULL;
+-- Fail if any users have null tenantId (manual remediation required)
+DO $$
+DECLARE
+  orphan_count integer;
+BEGIN
+  SELECT COUNT(*) INTO orphan_count FROM "users" WHERE "tenantId" IS NULL;
+  IF orphan_count > 0 THEN
+    RAISE EXCEPTION 'Migration blocked: % user(s) have tenantId IS NULL. Manually assign them to the correct tenant or delete them, then re-run the migration.', orphan_count;
+  END IF;
+END $$;
 
 -- Remove users that still have null tenantId (no tenant exists)
 DELETE FROM "users" WHERE "tenantId" IS NULL;
