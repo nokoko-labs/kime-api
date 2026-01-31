@@ -2,6 +2,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { Role } from '@prisma/client';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import type { LoginPayload } from './dto/login.dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -46,9 +47,9 @@ describe('AuthController', () => {
   describe('login', () => {
     it('should return access_token when user is attached by LocalAuthGuard', () => {
       const req = { user: mockUser };
-      const loginDto = { email: 'admin@example.com', password: 'admin123' };
+      const loginPayload: LoginPayload = { email: 'admin@example.com', password: 'admin123' };
 
-      const result = controller.login(req, loginDto);
+      const result = controller.login(req, loginPayload);
 
       expect(result).toEqual({ access_token: 'mock-jwt-token' });
       expect(service.login).toHaveBeenCalledWith(mockUser);
