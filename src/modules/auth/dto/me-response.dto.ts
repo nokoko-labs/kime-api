@@ -1,18 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
 
 /**
  * Response DTO for GET /auth/me (current user from JWT payload).
  */
-export class MeResponseDto {
-  @ApiProperty({ description: 'User ID (subject)' })
-  sub: string;
+export const MeResponseSchema = z.object({
+  sub: z.string().describe('User ID (subject)'),
+  email: z.string().email().describe('User email'),
+  role: z.enum(['ADMIN', 'USER']).describe('User role'),
+  tenantId: z.string().describe('Tenant ID'),
+});
 
-  @ApiProperty({ description: 'User email' })
-  email: string;
-
-  @ApiProperty({ description: 'User role', enum: ['ADMIN', 'USER'] })
-  role: string;
-
-  @ApiProperty({ description: 'Tenant ID' })
-  tenantId: string;
-}
+export class MeResponseDto extends createZodDto(MeResponseSchema) {}
