@@ -1,10 +1,10 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
-import * as bcrypt from 'bcryptjs';
+import { hash, compare } from 'bcryptjs';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
-import { PrismaService } from './../src/database/prisma.service';
+import { AppModule } from '../src/app.module';
+import { PrismaService } from '../src/database/prisma.service';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;

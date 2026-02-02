@@ -32,7 +32,7 @@ export class AuthController {
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Redirect to Google OAuth (social login)' })
   @ApiResponse({ status: 302, description: 'Redirects to Google consent screen' })
-  googleAuth() {
+  static googleAuth() {
     // Guard redirects to Google; no body executed
   }
 
