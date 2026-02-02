@@ -1,7 +1,6 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { Prisma } from '@prisma/client';
-import { type DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { PrismaService } from '@/database/prisma.service';
 import { TenantsService } from './tenants.service';
 
@@ -14,7 +13,7 @@ function createPrismaP2002Error(): Prisma.PrismaClientKnownRequestError {
 
 describe('TenantsService', () => {
   let service: TenantsService;
-  let prisma: DeepMockProxy<PrismaService>;
+  let prisma: PrismaService;
 
   const mockTenant = {
     id: '123e4567-e89b-12d3-a456-426614174000',
@@ -26,20 +25,22 @@ describe('TenantsService', () => {
     updatedAt: new Date(),
   };
 
-  const mockPrisma = mockDeep<PrismaService>();
+  const mockPrisma = {
+    tenant: {
+      create: jest.fn().mockResolvedValue(mockTenant),
+      findMany: jest.fn().mockResolvedValue([mockTenant]),
+      findUnique: jest.fn().mockResolvedValue(mockTenant),
+    },
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    mockPrisma.tenant.create.mockResolvedValue(mockTenant);
-    mockPrisma.tenant.findMany.mockResolvedValue([mockTenant]);
-    mockPrisma.tenant.findUnique.mockResolvedValue(mockTenant);
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [TenantsService, { provide: PrismaService, useValue: mockPrisma }],
     }).compile();
 
     service = module.get<TenantsService>(TenantsService);
-    prisma = module.get(PrismaService);
+    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should be defined', () => {
@@ -59,7 +60,7 @@ describe('TenantsService', () => {
 
     it('should throw ConflictException when slug already exists', async () => {
       const dto = { name: 'Acme Corp', slug: 'acme-corp' };
-      prisma.tenant.create.mockRejectedValue(createPrismaP2002Error());
+      (prisma.tenant.create as jest.Mock).mockRejectedValue(createPrismaP2002Error());
 
       await expect(service.create(dto)).rejects.toThrow(ConflictException);
       await expect(service.create(dto)).rejects.toThrow(
@@ -90,7 +91,7 @@ describe('TenantsService', () => {
     });
 
     it('should throw NotFoundException when tenant does not exist', async () => {
-      prisma.tenant.findUnique.mockResolvedValue(null);
+      (prisma.tenant.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.findOne('non-existent-id')).rejects.toThrow(NotFoundException);
       await expect(service.findOne('non-existent-id')).rejects.toThrow(

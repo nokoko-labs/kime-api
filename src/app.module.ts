@@ -6,7 +6,6 @@ import { ConfigModule } from '@/config/config.module';
 import { DatabaseModule } from '@/database/database.module';
 import { HealthModule } from '@/health/health.module';
 import { AuthModule } from '@/modules/auth/auth.module';
-import { PaymentsModule } from '@/modules/payments/payments.module';
 import { TenantsModule } from '@/modules/tenants/tenants.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -39,7 +38,6 @@ import { AppService } from './app.service';
     HealthModule,
     RedisModule,
     AuthModule,
-    PaymentsModule,
     TenantsModule,
   ],
   controllers: [AppController],
