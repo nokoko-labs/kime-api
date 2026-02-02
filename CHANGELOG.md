@@ -1,3 +1,10 @@
+# [1.1.0-beta.2](https://github.com/nokoko-labs/Silph-Core/compare/v1.1.0-beta.1...v1.1.0-beta.2) (2026-02-02)
+
+
+### Bug Fixes
+
+* merge develop to main ([#23](https://github.com/nokoko-labs/Silph-Core/issues/23)) ([cbb5bcc](https://github.com/nokoko-labs/Silph-Core/commit/cbb5bcc05f0a3b296ef65fcd9a3116b0e82dba22))
+
 # [1.1.0-beta.1](https://github.com/nokoko-labs/Silph-Core/compare/v1.0.0...v1.1.0-beta.1) (2026-02-02)
 
 
